@@ -1,0 +1,43 @@
+
+//'''Виртуальная таблица SI создается из нескольких таблиц и виртуальных таблиц: fsct (заполняемая таблица менеджерами через Power App), open stock, sell out и close stock. Идея такая, 
+что используя уравнение Close Stock - Open Stock + avg Sell out мы получаем вьюшку с 2мя колонками: Дата и расчетный SI'''
+
+CREATE VIEW [db_datawriter].[SI] 
+WITH min_date AS (
+  SELECT MIN([Date_test]) AS min_date
+  FROM [db_datawriter].[fcst_form_for_UPSA]
+)
+SELECT cs.[Date_test], cs.[sku_id], cs.[sku_name_swixx],
+       cs.[Packs] - LAG(os.Open_Stock, 0) OVER (PARTITION BY cs.sku_id, cs.sku_name_swixx ORDER BY cs.Date_test) + so.SO AS Packs 
+FROM [db_datawriter].[close_stock] AS cs
+LEFT JOIN (
+  SELECT os.[Date_test], os.[sku_id], os.[sku_name_swixx], os.Open_Stock
+  FROM [db_datawriter].[open_stock] AS os
+) AS os ON cs.[Date_test] = os.[Date_test] AND cs.[sku_name_swixx] = os.[sku_name_swixx]
+LEFT JOIN (
+  SELECT so.[Date_test], so.[sku_id], so.[sku_name_swixx], so.[Packs] AS SO
+  FROM [db_datawriter].[Sell_Out] AS so
+) AS so ON cs.[Date_test] = so.[Date_test] AND cs.[sku_name_swixx] = so.[sku_name_swixx]
+WHERE cs.[Date_test] >= (SELECT min_date FROM min_date)
+UNION ALL
+SELECT sf.[Date_test], sf.[sku_id], sf.[sku_name_swixx], sf.[Packs] AS Packs 
+FROM [db_datawriter].[SI_fact] AS sf;
+GO
+
+
+//'''Виртуальная таблица SO_mov_avg создается из таблицы fsct. В результате получаем 
+виртуальную таблицу с 2 колонками: датой и колонкой avg (moving average by 3 future months)'''
+
+'CREATE VIEW [db_datawriter].[SO_mov_avg] AS
+SELECT
+  Date_test,
+  Packs,
+  sku_id,
+  sku_name_swixx,
+  AVG(Packs) OVER (PARTITION BY sku_id, sku_name_swixx 
+                   ORDER BY Date_test 
+                   ROWS BETWEEN 1 FOLLOWING AND 3 FOLLOWING) AS three_month_moving_average
+FROM [db_datawriter].[fcst_form_for_UPSA]
+WHERE Type = 'Sell out';
+GO
+
