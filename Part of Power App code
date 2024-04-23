@@ -1,0 +1,5 @@
+//'''Low code в Power App для создания визуальной интерактивной таблицы в Power BI'''
+Filter('db_datawriter.fcst_form_for_UPSA', sku_name_swixx in [@PowerBIIntegration].Data.sku_name_swixx && Type in [@PowerBIIntegration].Data.Type) -- создает таблицу из 2-х колонок (тянется из Azure SQL)
+
+If(CountA(Distinct([@PowerBIIntegration].Data,sku_id))>1, "Select sku to update values", "Sku: " & LookUp('db_datawriter.fcst_form_for_UPSA', sku_name_swixx in [@PowerBIIntegration].Data.sku_name_swixx,sku_name_swixx)) -- 
+динамичная визуализация, уведомляющаяя какой филтр выбран (SKU)
