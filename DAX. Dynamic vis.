@@ -1,0 +1,66 @@
+//Код для динамично меняющихся визуализаций
+
+DynHelperSales3 =  
+    VAR SelectPeriod = SUM('Period switcher'[Code])
+    VAR SelectMeasuretype = SUM('Measure type Switcher'[Code])
+RETURN
+SWITCH(TRUE(),
+//MTD
+//RUB
+SelectPeriod = 13 && SelectMeasuretype = 1,
+        [MTD CP U],
+SelectPeriod = 13 && SelectMeasuretype = 2,
+        [MTD CP, '000 RUB],
+SelectPeriod = 13 && SelectMeasuretype = 4,
+        [MTD CP Stock],
+SelectPeriod = 13 && SelectMeasuretype = 5, 
+        [MTD CP P, '000 RUB],
+SelectPeriod = 13 && SelectMeasuretype = 6,
+        [MTD CP SKU],
+SelectPeriod = 13 && SelectMeasuretype = 7,
+        [MTD CP price],
+//MAT
+//RUB
+SelectPeriod = 12 && SelectMeasuretype = 1,
+        [MAT TY U],
+SelectPeriod = 12 && SelectMeasuretype = 2,
+        [MAT TY, '000 RUB],
+SelectPeriod = 12 && SelectMeasuretype = 4,
+        [MAT TY Stock],
+SelectPeriod = 12 && SelectMeasuretype = 5,
+        [MAT TY P, '000 EUR],
+SelectPeriod = 12 && SelectMeasuretype = 6,
+        [MAT TY SKU],
+SelectPeriod = 12 && SelectMeasuretype = 7,
+        [MAT TY price],
+
+//QTD
+//RUB
+SelectPeriod = 14 && SelectMeasuretype = 1,
+        [QTD TY LFL U],
+SelectPeriod = 14 && SelectMeasuretype = 2,
+        [QTD TY LFL, '000 RUB],
+SelectPeriod = 14 && SelectMeasuretype = 4,
+        [QTD TY LFL stock],
+SelectPeriod = 14 && SelectMeasuretype = 5,
+        [QTD TY P, '000 RUB],
+SelectPeriod = 14 && SelectMeasuretype = 6,
+        [QTD TY SKU],
+SelectPeriod = 14 && SelectMeasuretype = 7,
+        [QTD TY LFL price],    
+
+//YTD
+//RUB
+SelectPeriod = 11 && SelectMeasuretype = 1,
+        [YTD TY LFL U],
+SelectPeriod = 11 && SelectMeasuretype = 2,
+        [YTD TY LFL, '000 RUB],
+SelectPeriod = 11 && SelectMeasuretype = 4,
+        [YTD TY LFL Stock],
+SelectPeriod = 11 && SelectMeasuretype = 5,
+        [YTD TY P, '000 RUB],
+SelectPeriod = 11 && SelectMeasuretype = 6,
+        [YTD TY LFL SKU],
+SelectPeriod = 11 && SelectMeasuretype = 7,
+        [YTD TY LFL price]
+)
