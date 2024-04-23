@@ -1,0 +1,49 @@
+
+//Код для динамично меняющихся 'значений по оси X'
+
+
+HelperAxesGeo = 
+var Country_=
+CROSSJOIN(
+    ROW("Code",1),
+    ROW("Hierarchy Type","Country"),
+    VALUES('Residential district'[Country])
+)
+var Area=
+CROSSJOIN(
+    ROW("Code",2),
+    ROW("Hierarchy Type","Area"),
+    VALUES('Swixx Coverage'[Area])
+)
+var Fed_Distr=
+CROSSJOIN(
+    ROW("Code",3),
+    ROW("Hierarchy Type","Federal District"),
+    VALUES('Swixx Coverage'[Federal District])
+)
+var Swixx_Coverage =
+CROSSJOIN(
+    ROW("Code",4),
+    ROW("Hierarchy Type","Regions"),
+    VALUES('Residential district'[Swixx's Coverage])
+)
+var Federal_Subject =
+CROSSJOIN(
+    ROW("Code",5),
+    ROW("Hierarchy Type","Federal Subject"),
+    VALUES('Residential district'[Federal Subject])
+)
+var City_ =
+CROSSJOIN(
+    ROW("Code",6),
+    ROW("Hierarchy Type","City"),
+    VALUES('Residential district'[City])
+)
+var Residential_district =
+CROSSJOIN(
+    ROW("Code",7),
+    ROW("Hierarchy Type","Residetial District"),
+    VALUES('Residential district'[Residential district])
+)
+return
+UNION(Country_,Area,Fed_Distr,Swixx_Coverage,Federal_Subject,City_,Residential_district)
