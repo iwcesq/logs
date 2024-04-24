@@ -3,3 +3,5 @@ Filter('db_datawriter.fcst_form_for_UPSA', sku_name_swixx in [@PowerBIIntegratio
 
 If(CountA(Distinct([@PowerBIIntegration].Data,sku_id))>1, "Select sku to update values", "Sku: " & LookUp('db_datawriter.fcst_form_for_UPSA', sku_name_swixx in [@PowerBIIntegration].Data.sku_name_swixx,sku_name_swixx)) -- 
 динамичная визуализация, уведомляющаяя какой филтр выбран (SKU)
+
+ClearCollect(colSQL, 'db_datawriter.fcst_form_for_UPSA') -- трекинг юзеров, данных и времени в power app.
