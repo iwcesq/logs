@@ -64,3 +64,40 @@ SelectPeriod = 11 && SelectMeasuretype = 6,
 SelectPeriod = 11 && SelectMeasuretype = 7,
         [YTD TY LFL price]
 )
+
+
+//из другого визуала
+
+DynAxis for Geo = 
+VAR SelectProducttype=SELECTEDVALUE(HelperAxesGeo[Code])
+Return
+SWITCH(TRUE(),
+SelectProducttype =1,
+    CALCULATE('Product calc'[Market share],
+    TREATAS(VALUES(HelperAxesGeo[Country]),'Residential district'[Country])
+    ),
+SelectProducttype =2,
+    CALCULATE('Product calc'[Market share],
+    TREATAS(VALUES(HelperAxesGeo[Country]),'Residential district'[Area])
+    ),
+SelectProducttype =3,
+    CALCULATE('Product calc'[Market share],
+    TREATAS(VALUES(HelperAxesGeo[Country]),'Residential district'[Federal District])
+    ),
+SelectProducttype =4,
+    CALCULATE('Product calc'[Market share],
+    TREATAS(VALUES(HelperAxesGeo[Country]),'Residential district'[Swixx's Coverage])
+    ),
+SelectProducttype =5,
+CALCULATE('Product calc'[Market share],
+TREATAS(VALUES(HelperAxesGeo[Country]),'Residential district'[Federal Subject])
+    ),
+SelectProducttype =6,
+CALCULATE('Product calc'[Market share],
+TREATAS(VALUES(HelperAxesGeo[Country]),'Residential district'[City])
+    ),
+SelectProducttype =7,
+CALCULATE('Product calc'[Market share],
+TREATAS(VALUES(HelperAxesGeo[Country]),'Residential district'[Residential district])
+    )
+)
