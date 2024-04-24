@@ -25,3 +25,18 @@ Period3M, [SO]
 )
 RETURN
 Result
+
+""Есть две таблицы в BI, у них, например, общая таблица Календарь. При условии факт >0, то возвращается число из таб факт, если =, то возвращается и таблицы fcst"""
+fcst_or_fact = 
+var not_equal_zero =
+CALCULATE(SUM(fact_test[Packs]),FILTER(fact_test, fact_test[Packs]>0))
+VAR _date =
+    CALCULATE (
+        MAX (fact_test[Date_test]),
+        FILTER (fact_test, fact_test[Date_test]<= MAX ( 'DimDate '[Date]))
+    )
+VAR _value =
+    CALCULATE ( not_equal_zero, test_out_empty2[Date_test] = _date)
+var fcst= SUM(test_out_empty2[Packs])
+RETURN
+    IF ( _value = 0, fcst, _value)
