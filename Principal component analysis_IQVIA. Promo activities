@@ -1,0 +1,80 @@
+library(readxl)
+Promo_C_F <- read_excel("Promo_C_F.xlsx")
+View(Promo_C_F)
+library(tidyverse)
+library(ggrepel)
+library(reshape2)
+library(PerformanceAnalytics)
+library(psych)
+library(factoextra)
+
+summary(Promo_C_F)
+
+Promo_C_F %>%
+     select(-Brand) %>%
+     cor() %>%
+     melt() %>%
+     rename(Correlation = 3) %>%
+     ggplot() +
+     geom_tile(aes(x = Var1, y = Var2, fill = Correlation)) +
+     geom_text(aes(x = Var1, y = Var2, label = format(Correlation, digits = 2)),
+               size = 3) +
+     scale_fill_gradient2(low = "red",
+                          mid = "white",
+                          high = "darkblue",
+                          midpoint = 0) +
+     labs(x = NULL, y = NULL) +
+     theme(axis.text.x = element_text(angle = 90)) -- "Скаттерплот корреляции."
+
+KMO(Promo_C_F[,2:7]) -- " Kaiser–Meyer–Olkin (KMO) тест проверяет насколько данные подходят для факторного анализа. В нашем случае 0.7"
+cortest.bartlett(Promo_C_F[,2:7]) -- "Критерий Бартлетта для. Нудева гипотеза в моем случае <0.05. Хи кв = 320.4951. Степень свободы = 15"
+
+fa <- prcomp(x = Promo_C_F[ ,2:7], scale. = TRUE)  -- "смотрим важность компонентов"
+summary(fa)
+
+sum((fa$sdev)^2)
+(fa$sdev^2) / length(fa$sdev)
+
+fviz_eig(X = fa,
+          ggtheme = theme_bw(),
+          barcolor = "black",
+          barfill = "orange",
+          linecolor = "darkorchid") -- "график, показывающий квадратный корень из собственных значений, который поможет оценить долю дисперсии"
+
+data.frame(fa$rotation) %>%
+     mutate(var = names(Promo_C_F[ ,2:7])) %>%
+     melt() %>%
+     ggplot(aes(x = var, y = value, fill = var)) +
+     geom_bar(stat = "identity") +
+     facet_wrap(~variable) +
+     labs(x = NULL, y = NULL, fill = "Legend:") +
+     theme_bw() +
+     theme(axis.text.x = element_text(angle = 90))  -- "Рисуем график контрибьютеров"
+
+eigen_greater_one <- sum((fa$sdev^2) > 1) -- "смотрим eigenvalues > 1"
+ 
+loadings_fa <- fa$rotation[, 1:ncol(fa$x)] %*% -- "умножаем матрицу собственных векторов, которые>1, на диагональную матрицу собственных значений, превышающих 1"
+     diag(fa$sdev[1:ncol(fa$x)])
+
+loadings_fa[ , 1:eigen_greater_one]
+
+communality <- rowSums(loadings_fa[ , 1:eigen_greater_one]^2)
+communality
+
+scores_fa <- t(fa$rotation[, 1:eigen_greater_one]) / fa$sdev[1:eigen_greater_one]
+scores_fa
+
+Promo_C_F["F1"] <- rowSums(t(apply(X = scale(Promo_C_F[ ,2:7]),
+                                            MARGIN = 1,
+                                            FUN = function(x) -x * scores_fa[1, ])))
+Promo_C_F["F2"] <- rowSums(t(apply(X = scale(Promo_C_F[ ,2:7]),
+                                            MARGIN = 1,
+                                            FUN = function(x) x * scores_fa[2, ])))
+
+shared_var <- (fa$sdev^2 / length(fa$sdev))[1:eigen_greater_one]
+
+attach(Promo_C_F)
+Promo_C_F["ranking"] <- F1 * shared_var[1] + F2
+
+Promo_C_F1 <- Promo_C_F[order(Promo_C_F$ranking, decreasing = TRUE),]
+Promo_C_F1
