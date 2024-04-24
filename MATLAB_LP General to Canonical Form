@@ -3,7 +3,7 @@ function [A, c, b, Eqin, MinMaxLP, c0] = ...
 % Filename: general2canonical.m
 % Description:Функция для преобразования 
 % общей задачи линейного программирования (ЛП) в ее каноническую форму.
-% Проще говоря преобразование максимизации в минимизацию матрицы
+% Проще говоря преобразование матрицы из максимизации в минимизацию 
 %
 % Syntax: [A, c, b, Eqin, MinMaxLP, c0] = ...
 %   general2canonical(A, c, b, Eqin, MinMaxLP, c0)
