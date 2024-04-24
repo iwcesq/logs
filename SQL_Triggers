@@ -1,0 +1,30 @@
+"""Триггер на удаление старого 1-го мес из таблицы, тогда когда в таблице фактов появляется факт нового месяца."
+CREATE TRIGGER [db_datawriter].[remove_min_dates_from_fact_blank]
+ON [db_datawriter].[Fact]
+AFTER INSERT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @MinDate DATE;
+    SELECT @MinDate = MIN(Date_test) FROM [db_datawriter].[Fact_blank_form_UPSA];
+
+    DELETE FROM [db_datawriter].[Fact_blank_form_UPSA]
+    WHERE Date_test = @MinDate;
+END
+GO
+ALTER TABLE [db_datawriter].[Fact] DISABLE TRIGGER [remove_min_dates_from_fact_blank]
+GO
+
+"""Добавить новый мес в таблицу фактов"""
+CREATE TRIGGER [db_datawriter].[add_date]
+ON [db_datawriter].[Fact]
+AFTER INSERT
+AS
+BEGIN
+  UPDATE [db_datawriter].[next_month_and_unique]
+  SET [Date_test] = DATEADD(month, 1, [Date_test]);
+END;
+GO
+ALTER TABLE [db_datawriter].[Fact] DISABLE TRIGGER [add_date]
+GO
