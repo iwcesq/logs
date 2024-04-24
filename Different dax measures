@@ -1,0 +1,27 @@
+"""Мера, которая возвращает 3 усредненных будущих месяца. У каждого эта плавающая мера"""
+Fwd_SO = 
+VAR Period3M =
+CALCULATETABLE (
+DATESINPERIOD (
+'DimDate '[Date],
+MAX ( 'DimDate '[Date] ),
++3, MONTH
+)
+)
+VAR FirstDayWithData =
+IFERROR(IF(not ISEMPTY(test_out_empty2),
+CALCULATE (
+MIN ( 'DimDate2 '[Date]),
+REMOVEFILTERS ()),""),"")
+
+VAR FirstDayInPeriod =
+MINX ( Period3M, 'DimDate '[Date] )
+VAR Result =
+IF(
+FirstDayWithData <= FirstDayInPeriod,
+AVERAGEX (
+Period3M, [SO]
+)
+)
+RETURN
+Result
