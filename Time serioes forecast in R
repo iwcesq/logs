@@ -1,0 +1,121 @@
+
+library(readxl)
+C_F_market <- read_excel("~/Documents/C&F market.xlsx")
+View(C_F_market)    
+
+library(TSstudio)
+library(dplyr)
+library(lubridate)
+
+
+df<-data.frame(C_F_market)
+df$Date<- as.Date(df$Date, format = "%Y/%m/%d")
+df_ts<-ts(data =df[,2],start = c(2019,1),frequency = 12)
+
+pacf(df_ts) -- "Lag -1 показал 60% корреляции с прошлым этого временного ряда, т.о. lag -1 будет зашит в дальнейшем коде"
+
+names(df) <- c("date", "y")
+head(df)
+
+df <- df %>% mutate(month = factor(month(date, label = TRUE), ordered =
+FALSE), lag1 = lag(y, n = 1)) %>%
+filter(!is.na(lag1))
+
+df$trend <- 1:nrow(df)
+df$trend_sqr <- df$trend ^ 2 --"В многочлен добавляется квадратичный тренд в том числе. Затем эти столбцы можно использовать 
+в качестве независимых переменных в регрессионном анализе, чтобы увидеть, как они влияют на зависимую переменную во фрейме данных df"
+
+str(df)
+h <- 12
+train_df <- df[1:(nrow(df) - h), ]
+test_df <- df[(nrow(df) - h + 1):nrow(df), ]
+
+forecast_df <- data.frame(date = seq.Date(from = max(df$date) + month(1),
+length.out = h, by = "month"),
+trend = seq(from = max(df$trend) + 1, length.out = h, by = 1))
+
+forecast_df$trend_sqr <- forecast_df$trend ^ 2
+
+forecast_df$month <- factor(month(forecast_df$date, label = TRUE), ordered
+= FALSE)
+
+forecast_df$lag1 <- tail(df$y, 12)
+
+lr <- lm(y ~ month + lag1 + trend + trend_sqr, data = train_df) -- "тренируем регресионную модельи, затем смотрим результат"
+
+test_df$yhat <- predict(lr, newdata = test_df)
+mape_lr <- mean(abs(test_df$y - test_df$yhat) / test_df$y)
+mape_lr -- "10%"
+
+library(h2o)
+h2o.init(max_mem_size = "16G") -- "переходим к h2o кластеру. Обычно GBM, AutoMl и иногда Random Forest model дают точный и быстрый результат"
+
+train_h <- as.h2o(train_df)
+test_h <- as.h2o(test_df)
+forecast_h <- as.h2o(forecast_df)
+x <- c("month", "lag1", "trend", "trend_sqr")
+y <- "y"
+
+rf_md <- h2o.randomForest(training_frame = train_h,
+nfolds = 5,
+x = x,
+y = y,
+ntrees = 500,
+stopping_rounds = 10,
+stopping_metric = "RMSE",
+score_each_iteration = TRUE,
+stopping_tolerance = 0.0001,
+seed = 1234) -- "Метод случайного леса."
+
+h2o.varimp_plot(rf_md) -- "показал, что самая важная переменная для модели - это 'месяц', затем 'lag' и тд."
+
+rf_md@model$model_summary
+
+test_h$pred_rf <- h2o.predict(rf_md, test_h)
+test_1 <- as.data.frame(test_h)
+
+mape_rf <- mean(abs(test_1$y - test_1$pred_rf) / test_1$y)
+mape_rf -- "8%"
+
+gbm_md <- h2o.gbm(
+training_frame = train_h,
+nfolds = 5,
+x = x,
+y = y,
+max_depth = 20,
+distribution = "gaussian",
+ntrees = 500,
+learn_rate = 0.01,
+score_each_iteration = TRUE
+) -- "Градиентный бустинг. Он использует ускоряющий подход для обучения различных подмножеств данных и повторяет обучение подмножеств,
+которые были в модели, с высокой частотой ошибок. Это позволяет модели извлекать уроки из прошлых ошибок
+и повышать прогностическую способность модели."
+
+h2o.varimp_plot(gbm_md) -- "показал, что самая важная переменная для модели - это 'месяц', затем 'тренд' и тд."
+
+test_h$pred_gbm <- h2o.predict(gbm_md, test_h)
+test_1 <- as.data.frame(test_h)
+mape_gbm <- mean(abs(test_1$y - test_1$pred_gbm) / test_1$y)
+mape_gbm -- "5.5 %"
+
+
+autoML1 <- h2o.automl(training_frame = train_h,
+                      x = x,
+                      y = y,
+                      nfolds = 5,
+                      max_runtime_secs = 60*20,
+                      seed = 1234) -- "И наконец финальная модель AutoML. Она обеспечивает автоматизированный
+подход к обучению, настройке и тестированию нескольких алгоритмов ML, прежде чем выбрать
+модель, которая показала наилучшие результаты, на основе оценки модели. В ней используются такие алгоритмы, как
+RF, GBM, DL и другие, использующие различные подходы к настройке."
+
+autoML1@leaderboard -- "DL модель показала лучший результат"
+
+
+test_h$pred_autoML <- h2o.predict(autoML1@leader, test_h)
+test_1 <- as.data.frame(test_h)
+mape_autoML <- mean(abs(test_1$y - test_1$pred_autoML) / test_1$y)
+mape_autoML -- "4.3%"
+
+forecast_h$pred_gbm <- h2o.predict(gbm_md, forecast_h)
+forecast_h$pred_automl <- h2o.predict(autoML1@leader, forecast_h) -- "Прогнозируем на след 12 мес продажи"
