@@ -74,7 +74,7 @@ Promo_C_F["F2"] <- rowSums(t(apply(X = scale(Promo_C_F[ ,2:7]),
 shared_var <- (fa$sdev^2 / length(fa$sdev))[1:eigen_greater_one]
 
 attach(Promo_C_F)
-Promo_C_F["ranking"] <- F1 * shared_var[1] + F2*shared_var[1]
+Promo_C_F["ranking"] <- F1 * shared_var[1] + F2*shared_var[2]
 
 Promo_C_F1 <- Promo_C_F[order(Promo_C_F$ranking, decreasing = TRUE),]
 Promo_C_F1
