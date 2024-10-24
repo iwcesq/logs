@@ -1,0 +1,42 @@
+Вьюшка для прогноза_Sell_out = 
+ADDCOLUMNS(
+    CROSSJOIN('DimDate ', 'Словарь каналов'),
+    "Авторский прогноз_Sell_Out", 
+    SWITCH(
+        TRUE(),
+        -- Прогноз
+        MONTH('DimDate '[Date]) = MONTH(TODAY()) && YEAR('DimDate '[Date]) = YEAR(TODAY()),
+        SUMX(
+            FILTER(
+                'Прогноз 23_10',
+                'Прогноз 23_10'[Date]= 'DimDate '[Date] && 
+                'Прогноз 23_10'[Канал] = 'Словарь каналов'[Канал]
+            ),
+            'Прогноз 23_10'[Value]
+        ),
+
+        -- Факт Sell out
+        'DimDate '[Date] < TODAY(),
+        SUMX(
+            FILTER(
+                'all',
+                'all'[Date] = 'DimDate '[Date] && 
+                'all'[ЦФО Продажи[Канал]]] = 'Словарь каналов'[Канал]
+            ),
+            'all'[[Выручка Sell Out, млн руб]]]
+        ),
+        -- МП
+        'DimDate '[Date] > TODAY(),
+        SUMX(
+            FILTER(
+                'all',
+                'all'[Date] = 'DimDate '[Date] && 
+                'all'[ЦФО Продажи[Канал]]] = 'Словарь каналов'[Канал]
+            ),
+            'all'[[Бюджет Sell Out, млн руб]]]
+        ),
+
+        -- Default value if no condition matches
+        BLANK()
+    )
+)
