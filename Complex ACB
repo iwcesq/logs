@@ -1,0 +1,28 @@
+Precalculated_Акб = 
+VAR SelectedMonths = 
+    CALCULATE(
+        DISTINCTCOUNT('DimDate '[Date]),
+        ALLSELECTED('DimDate ') -- если выбран > 1 мес 
+    )
+VAR SumMaxSalesById = 
+    SUMX(
+        SUMMARIZE(
+            'АКБ_final',
+            'АКБ_final'[value],
+            "MaxSalesPerId", MAX('АКБ_final'[[АКБ]]])
+        ),
+        [MaxSalesPerId]
+    ) -- это условие для сетей и условие для отдльных точек
+VAR SumSales = 
+    SUM('АКБ_final'[[АКБ]]])
+VAR ChannelCondition = 
+    SELECTEDVALUE('Словарь каналов'[Канал]) IN {"НРС", "ЛРС"}
+VAR DistinctCountValue = 
+    DISTINCTCOUNT('АКБ_final'[value])
+
+RETURN
+        IF(
+            ChannelCondition,
+            IF(SelectedMonths > 1, SumMaxSalesById, SumSales),
+            DistinctCountValue
+        )
