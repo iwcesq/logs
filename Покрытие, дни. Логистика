@@ -1,0 +1,68 @@
+Cover_Calculation = 
+VAR Yesterday = MIN('DimDate_cover '[Date])
+
+VAR AllDates = ADDCOLUMNS(
+   CROSSJOIN(
+        FILTER(VALUES('DimDate_cover '[Date]), 'DimDate_cover '[Date] = Yesterday), 
+        VALUES('Log_Униф_словарь')
+    ), 
+    "CoverValue", LOOKUPVALUE(
+        'log_Покр_трубой_поставок _Nav'[[Товар_в_Трубе_Поставок_в_План_СС__руб]]], 
+        'log_Покр_трубой_поставок _Nav'[Date], [Date], 
+        'log_Покр_трубой_поставок _Nav'[Primary Key], [Primary Key]
+    )
+)
+
+VAR Result =
+ADDCOLUMNS(
+    AllDates,
+    "New Cover", 
+    VAR _CurrentDate = [Date]
+    VAR _Category = [Primary Key]
+    VAR _Cover = [CoverValue]
+    
+    VAR _FutureDates =
+        FILTER(
+            ADDCOLUMNS(
+                FILTER(
+                    'Log_Точн_прогноз_продаж_Sales',
+                    'Log_Точн_прогноз_продаж_Sales'[Date] >= _CurrentDate &&
+                    'Log_Точн_прогноз_продаж_Sales'[Primary Key] = _Category
+                ),
+                "@CumulativeSales",
+                VAR _RunningTotal =
+                    SUMX(
+                        FILTER(
+                            'Log_Точн_прогноз_продаж_Sales',
+                            'Log_Точн_прогноз_продаж_Sales'[Date] >= _CurrentDate &&
+                            'Log_Точн_прогноз_продаж_Sales'[Date] <= EARLIER('Log_Точн_прогноз_продаж_Sales'[Date]) &&
+                            'Log_Точн_прогноз_продаж_Sales'[Primary Key] = _Category
+                        ),
+                        'Log_Точн_прогноз_продаж_Sales'[[BBBL_в_План_СС_на_Сегодня__руб]]]
+                    )
+                RETURN _RunningTotal
+            ),
+            [@CumulativeSales] >= _Cover
+        )
+
+    VAR _BestMatch =
+        TOPN(
+            1,
+            ADDCOLUMNS(
+                _FutureDates,
+                "@Diff", ABS([@CumulativeSales] - _Cover)
+            ),
+            [@Diff], ASC,
+            'Log_Точн_прогноз_продаж_Sales'[Date], ASC
+        )
+
+    VAR _BestMatchDate = MAXX(_BestMatch, 'Log_Точн_прогноз_продаж_Sales'[Date])
+    
+    RETURN
+        IF(
+            _Cover <> BLANK() && _BestMatchDate <> BLANK(),
+            DATEDIFF(_CurrentDate, _BestMatchDate, DAY)
+        )
+)
+
+RETURN Result
